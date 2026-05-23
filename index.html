@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COspa Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, "SF Pro", Inter, Segoe UI, Roboto, sans-serif; background: #faf8f5; }
+  .kpi { background: white; border: 1px solid #ece6dc; border-radius: 14px; padding: 16px 18px; }
+  .kpi-num { font-family: Georgia, serif; font-size: 32px; font-weight: 600; color: #1f1f1f; line-height: 1; }
+  .kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: #8a8a78; text-transform: uppercase; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #ece6dc; }
+  th { background: #f5f0e8; padding: 10px 12px; text-align: left; font-size: 11px; letter-spacing: 1px; color: #6b6b58; font-weight: 700; text-transform: uppercase; }
+  td { padding: 12px; border-top: 1px solid #f0eadf; font-size: 14px; color: #2b2b2b; }
+  tr:hover td { background: #faf6ee; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .pill-cliente { background: #e8f0e0; color: #4a6224; }
+  .pill-especialista { background: #ddeaf3; color: #2c5b85; }
+  .pill-dueno { background: #f0e6d6; color: #8a6914; }
+  .pill-recepcionista { background: #f4dbd4; color: #95412c; }
+  .pill-on { background: #def0d8; color: #2c6b14; }
+  .pill-off { background: #f4d7d3; color: #983323; }
+  .pill-activa { background: #def0d8; color: #2c6b14; }
+  .pill-enGracia, .pill-en-gracia { background: #f9e8c8; color: #9e6c0a; }
+  .pill-bloqueada { background: #f4d7d3; color: #983323; }
+  .btn-tab { padding: 10px 18px; font-weight: 600; color: #6b6b58; border-bottom: 2px solid transparent; }
+  .btn-tab.active { color: #2b2b2b; border-bottom-color: #5f7530; }
+  .btn { padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-prim { background: #5f7530; color: white; }
+  .btn-prim:hover { background: #4d6126; }
+  .btn-sec { background: #ece6dc; color: #2b2b2b; }
+  .btn-sec:hover { background: #ddd6c8; }
+  .btn-red { background: #b75a51; color: white; }
+  .btn-red:hover { background: #964a43; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+  .modal { background: white; border-radius: 16px; padding: 24px; max-width: 460px; width: 92%; }
+  input, select { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 9px; font-size: 14px; margin-bottom: 10px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; margin-top: 8px; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- LOGIN -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center p-6">
+  <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md border border-gray-200">
+    <div class="text-center mb-6">
+      <div class="text-3xl font-serif font-semibold text-gray-800">COspa Admin</div>
+      <div class="text-sm text-gray-500 mt-1">Panel de control</div>
+    </div>
+    <label>Admin secret</label>
+    <input type="password" id="loginSecret" placeholder="Pega tu ADMIN_SECRET" />
+    <button class="btn btn-prim w-full mt-2" onclick="iniciarSesion()">Entrar</button>
+    <div id="loginError" class="text-sm text-red-600 mt-3 hidden"></div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="panel" class="hidden">
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div>
+        <div class="text-xl font-serif font-semibold">COspa Admin</div>
+        <div class="text-xs text-gray-500">Panel de control</div>
+      </div>
+      <div class="flex gap-2 items-center">
+        <button class="btn btn-sec" onclick="cargarTodo()">↻ Refrescar</button>
+        <button class="btn btn-sec" onclick="cerrarSesion()">Salir</button>
+      </div>
+    </div>
+    <nav class="max-w-6xl mx-auto px-6 flex gap-2 border-t border-gray-100">
+      <button class="btn-tab active" data-tab="kpis" onclick="mostrarTab('kpis')">📊 KPIs</button>
+      <button class="btn-tab" data-tab="usuarios" onclick="mostrarTab('usuarios')">👤 Usuarios</button>
+      <button class="btn-tab" data-tab="sedes" onclick="mostrarTab('sedes')">🏢 Sedes</button>
+      <button class="btn-tab" data-tab="membresias" onclick="mostrarTab('membresias')">💳 Membresías</button>
+      <button class="btn-tab" data-tab="acciones" onclick="mostrarTab('acciones')">⚙️ Acciones</button>
+    </nav>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-6">
+    <!-- TAB KPIs -->
+    <section id="tab-kpis" class="tab">
+      <div id="kpisGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+    </section>
+
+    <!-- TAB Usuarios -->
+    <section id="tab-usuarios" class="tab hidden">
+      <div class="flex gap-3 mb-4 items-center">
+        <input type="text" id="filtroUsuarios" placeholder="Buscar por nombre o email…" oninput="renderUsuarios()" class="max-w-sm" style="margin-bottom: 0">
+        <select id="filtroRol" onchange="renderUsuarios()" class="max-w-xs" style="margin-bottom: 0">
+          <option value="">Todos los roles</option>
+          <option value="cliente">Cliente</option>
+          <option value="especialista">Especialista</option>
+          <option value="recepcionista">Recepcionista</option>
+          <option value="dueno">Dueño</option>
+        </select>
+        <span class="text-sm text-gray-500 ml-auto" id="contUsuarios"></span>
+      </div>
+      <div id="tablaUsuarios"></div>
+    </section>
+
+    <!-- TAB Sedes -->
+    <section id="tab-sedes" class="tab hidden">
+      <div class="flex mb-4 items-center">
+        <span class="text-sm text-gray-500 ml-auto" id="contSedes"></span>
+      </div>
+      <div id="tablaSedes"></div>
+    </section>
+
+    <!-- TAB Membresías -->
+    <section id="tab-membresias" class="tab hidden">
+      <div class="flex mb-4 items-center">
+        <span class="text-sm text-gray-500 ml-auto" id="contMembresias"></span>
+      </div>
+      <div id="tablaMembresias"></div>
+    </section>
+
+    <!-- TAB Acciones globales -->
+    <section id="tab-acciones" class="tab hidden">
+      <div class="bg-white rounded-2xl p-6 border border-gray-200 max-w-xl">
+        <h3 class="font-serif text-xl mb-2">Resetear base de datos</h3>
+        <p class="text-sm text-gray-600 mb-4">Borra TODOS los datos (usuarios, sedes, citas, membresías…). La estructura se mantiene. <strong>No se puede deshacer.</strong></p>
+        <button class="btn btn-red" onclick="confirmarReset()">Resetear BD</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL Ajustar membresía -->
+<div id="modalMembresia" class="modal-bg hidden">
+  <div class="modal">
+    <h3 class="font-serif text-xl mb-1">Ajustar membresía</h3>
+    <p id="modalMembresiaSede" class="text-sm text-gray-500 mb-4"></p>
+    <input type="hidden" id="modalMembresiaSedeId">
+
+    <label>Estado</label>
+    <select id="modalMembresiaEstado">
+      <option value="">(no cambiar)</option>
+      <option value="activa">Activa</option>
+      <option value="enGracia">En gracia</option>
+      <option value="bloqueada">Bloqueada</option>
+    </select>
+
+    <label>Máximo de especialistas</label>
+    <input type="number" id="modalMembresiaMaxEsp" placeholder="(no cambiar)" min="1" max="999">
+
+    <label>Días extra (suma al vencimiento)</label>
+    <input type="number" id="modalMembresiaDias" placeholder="0 = no cambiar" min="0">
+
+    <label>¿Es prueba?</label>
+    <select id="modalMembresiaPrueba">
+      <option value="">(no cambiar)</option>
+      <option value="true">Sí</option>
+      <option value="false">No</option>
+    </select>
+
+    <div class="flex gap-2 mt-4">
+      <button class="btn btn-sec flex-1" onclick="cerrarModalMembresia()">Cancelar</button>
+      <button class="btn btn-prim flex-1" onclick="guardarMembresia()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://cospa-backend-production.up.railway.app/api/v1';
+let SECRET = localStorage.getItem('cospa_admin_secret') || '';
+let DATA = { usuarios: [], sedes: [], membresias: [], kpis: null };
+
+// ── auth ──────────────────────────────────────────────────────────────────────
+async function iniciarSesion() {
+  const v = document.getElementById('loginSecret').value.trim();
+  if (!v) return;
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  try {
+    const r = await fetch(`${API}/admin/login`, {
+      method: 'POST',
+      headers: { 'x-admin-secret': v },
+    });
+    if (!r.ok) throw new Error('Secret incorrecto');
+    SECRET = v;
+    localStorage.setItem('cospa_admin_secret', v);
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('panel').classList.remove('hidden');
+    cargarTodo();
+  } catch (e) {
+    err.textContent = e.message || 'Error de conexión';
+    err.classList.remove('hidden');
+  }
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('cospa_admin_secret');
+  SECRET = '';
+  document.getElementById('panel').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginSecret').value = '';
+}
+
+if (SECRET) {
+  // intento de reanudar sesión
+  fetch(`${API}/admin/login`, { method: 'POST', headers: { 'x-admin-secret': SECRET } })
+    .then(r => {
+      if (r.ok) {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('panel').classList.remove('hidden');
+        cargarTodo();
+      }
+    });
+}
+
+// ── fetch helper ──────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const r = await fetch(`${API}${path}`, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-secret': SECRET,
+      ...(opts.headers || {}),
+    },
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+// ── tabs ──────────────────────────────────────────────────────────────────────
+function mostrarTab(t) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-' + t).classList.remove('hidden');
+  document.querySelectorAll('.btn-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
+}
+
+// ── carga ─────────────────────────────────────────────────────────────────────
+async function cargarTodo() {
+  try {
+    const [k, u, s, m] = await Promise.all([
+      api('/admin/kpis'),
+      api('/admin/usuarios'),
+      api('/admin/sedes'),
+      api('/admin/membresias'),
+    ]);
+    DATA = { kpis: k, usuarios: u, sedes: s, membresias: m };
+    renderKpis();
+    renderUsuarios();
+    renderSedes();
+    renderMembresias();
+  } catch (e) {
+    alert('Error cargando datos: ' + e.message);
+  }
+}
+
+// ── render KPIs ──────────────────────────────────────────────────────────────
+function renderKpis() {
+  const k = DATA.kpis; if (!k) return;
+  const cards = [
+    { num: k.usuarios.total,        label: 'Usuarios total' },
+    { num: k.usuarios.nuevos30d,    label: 'Nuevos (30 días)' },
+    { num: k.usuarios.clientes,     label: 'Clientes' },
+    { num: k.usuarios.duenos,       label: 'Dueños' },
+    { num: k.usuarios.especialistas,label: 'Especialistas' },
+    { num: k.sedes.total,           label: 'Sedes' },
+    { num: k.citas.mes,             label: 'Citas (mes)' },
+    { num: '$' + k.ingresos.mesCOP.toLocaleString('es-CO'), label: 'Ingresos (mes)' },
+    { num: k.membresias.activas,    label: 'Membresías activas' },
+    { num: k.membresias.enGracia,   label: 'En gracia' },
+    { num: k.membresias.bloqueadas, label: 'Bloqueadas' },
+    { num: k.citas.total,           label: 'Citas totales' },
+  ];
+  document.getElementById('kpisGrid').innerHTML = cards.map(c => `
+    <div class="kpi">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-num">${c.num}</div>
+    </div>`).join('');
+}
+
+// ── render usuarios ──────────────────────────────────────────────────────────
+function renderUsuarios() {
+  const f = (document.getElementById('filtroUsuarios').value || '').toLowerCase();
+  const rol = document.getElementById('filtroRol').value;
+  let lista = DATA.usuarios.filter(u =>
+    (!f || (u.nombre||'').toLowerCase().includes(f) || (u.email||'').toLowerCase().includes(f)) &&
+    (!rol || u.rol === rol)
+  );
+  document.getElementById('contUsuarios').textContent = `${lista.length} usuarios`;
+  const filas = lista.map(u => `
+    <tr>
+      <td>${u.nombre || '—'}</td>
+      <td>${u.email || '—'}</td>
+      <td><span class="pill pill-${u.rol}">${u.rol}</span></td>
+      <td>${u.telefono || '—'}</td>
+      <td><span class="pill ${u.estaActivo ? 'pill-on' : 'pill-off'}">${u.estaActivo ? 'activo' : 'baneado'}</span></td>
+      <td>${u.creadoEn ? new Date(u.creadoEn).toLocaleDateString('es-CO') : '—'}</td>
+      <td>
+        ${u.estaActivo
+          ? `<button class="btn btn-sec" onclick="banear('${u.id}')">Banear</button>`
+          : `<button class="btn btn-sec" onclick="desbanear('${u.id}')">Desbanear</button>`}
+        <button class="btn btn-red" onclick="eliminarUsuario('${u.id}','${(u.email||'').replace(/'/g,'')}')">Eliminar</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('tablaUsuarios').innerHTML = `
+    <table>
+      <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Teléfono</th><th>Estado</th><th>Creado</th><th>Acciones</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="7" class="text-center text-gray-500 py-6">Sin usuarios</td></tr>'}</tbody>
+    </table>`;
+}
+
+async function banear(id) {
+  await api(`/admin/usuarios/${id}/banear`, { method: 'PATCH' });
+  cargarTodo();
+}
+async function desbanear(id) {
+  await api(`/admin/usuarios/${id}/desbanear`, { method: 'PATCH' });
+  cargarTodo();
+}
+async function eliminarUsuario(id, email) {
+  if (!confirm(`¿Eliminar permanentemente al usuario ${email}? Se borrarán todas sus citas, sedes, mensajes, etc.`)) return;
+  await api(`/admin/usuarios/${id}`, { method: 'DELETE' });
+  cargarTodo();
+}
+
+// ── render sedes ─────────────────────────────────────────────────────────────
+function renderSedes() {
+  const lista = DATA.sedes;
+  document.getElementById('contSedes').textContent = `${lista.length} sedes`;
+  const filas = lista.map(s => `
+    <tr>
+      <td>${s.nombre || '—'}</td>
+      <td>${s.direccion || '—'}</td>
+      <td>${s.telefono || '—'}</td>
+      <td>${s.duenoNombre || '—'}<div class="text-xs text-gray-500">${s.duenoEmail || ''}</div></td>
+      <td>${s.creadoEn ? new Date(s.creadoEn).toLocaleDateString('es-CO') : '—'}</td>
+    </tr>`).join('');
+  document.getElementById('tablaSedes').innerHTML = `
+    <table>
+      <thead><tr><th>Nombre</th><th>Dirección</th><th>Teléfono</th><th>Dueño</th><th>Creada</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="5" class="text-center text-gray-500 py-6">Sin sedes</td></tr>'}</tbody>
+    </table>`;
+}
+
+// ── render membresias ────────────────────────────────────────────────────────
+function renderMembresias() {
+  const lista = DATA.membresias;
+  document.getElementById('contMembresias').textContent = `${lista.length} membresías`;
+  const filas = lista.map(m => `
+    <tr>
+      <td>${m.sedeNombre || '—'}</td>
+      <td>${m.duenoNombre || '—'}<div class="text-xs text-gray-500">${m.duenoEmail || ''}</div></td>
+      <td><span class="pill pill-${m.estado}">${m.estado}</span></td>
+      <td>${m.maxEspecialistas}</td>
+      <td>${m.fechaVencimiento ? new Date(m.fechaVencimiento).toLocaleDateString('es-CO') : '—'}</td>
+      <td>${m.esPrueba ? '🎁 sí' : 'no'}</td>
+      <td>
+        <button class="btn btn-prim" onclick='abrirModalMembresia(${JSON.stringify(m).replace(/"/g,"&quot;")})'>Ajustar</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('tablaMembresias').innerHTML = `
+    <table>
+      <thead><tr><th>Sede</th><th>Dueño</th><th>Estado</th><th>Máx esp</th><th>Vence</th><th>Prueba</th><th>Acciones</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="7" class="text-center text-gray-500 py-6">Sin membresías</td></tr>'}</tbody>
+    </table>`;
+}
+
+function abrirModalMembresia(m) {
+  document.getElementById('modalMembresiaSedeId').value = m.sedeId;
+  document.getElementById('modalMembresiaSede').textContent = `${m.sedeNombre} · ${m.duenoEmail || ''}`;
+  document.getElementById('modalMembresiaEstado').value = '';
+  document.getElementById('modalMembresiaMaxEsp').value = '';
+  document.getElementById('modalMembresiaDias').value = '';
+  document.getElementById('modalMembresiaPrueba').value = '';
+  document.getElementById('modalMembresia').classList.remove('hidden');
+}
+function cerrarModalMembresia() {
+  document.getElementById('modalMembresia').classList.add('hidden');
+}
+async function guardarMembresia() {
+  const sedeId = document.getElementById('modalMembresiaSedeId').value;
+  const body = {};
+  const est = document.getElementById('modalMembresiaEstado').value;
+  const max = document.getElementById('modalMembresiaMaxEsp').value;
+  const dias = document.getElementById('modalMembresiaDias').value;
+  const prueba = document.getElementById('modalMembresiaPrueba').value;
+  if (est) body.estado = est;
+  if (max) body.maxEspecialistas = parseInt(max, 10);
+  if (dias) body.diasExtra = parseInt(dias, 10);
+  if (prueba) body.esPrueba = prueba === 'true';
+  if (Object.keys(body).length === 0) { cerrarModalMembresia(); return; }
+  await api(`/admin/membresias/${sedeId}`, { method: 'PATCH', body: JSON.stringify(body) });
+  cerrarModalMembresia();
+  cargarTodo();
+}
+
+// ── reset BD ─────────────────────────────────────────────────────────────────
+async function confirmarReset() {
+  if (!confirm('⚠️ Esto BORRARÁ TODOS LOS DATOS de la base. Continuar?')) return;
+  if (!confirm('Estás 100% seguro? Última oportunidad para cancelar.')) return;
+  const r = await api('/admin/reset-db', { method: 'POST' });
+  alert(`BD reseteada. ${r.total} tablas vaciadas.`);
+  cargarTodo();
+}
+</script>
+
+</body>
+</html>
