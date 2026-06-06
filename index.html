@@ -101,7 +101,9 @@
 
     <!-- TAB Sedes -->
     <section id="tab-sedes" class="tab hidden">
-      <div class="flex mb-4 items-center">
+      <div class="flex mb-4 items-center gap-3">
+        <label class="text-sm text-gray-600">Mes:</label>
+        <select id="selMesSedes" onchange="cargarSedesMes()" style="margin-bottom:0; max-width: 220px"></select>
         <span class="text-sm text-gray-500 ml-auto" id="contSedes"></span>
       </div>
       <div id="tablaSedes"></div>
@@ -319,21 +321,54 @@ async function eliminarUsuario(id, email) {
 }
 
 // ── render sedes ─────────────────────────────────────────────────────────────
+// Llena el selector de meses (últimos ~18 meses) una sola vez.
+function poblarMesesSedes() {
+  const sel = document.getElementById('selMesSedes');
+  if (!sel || sel.options.length) return;
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const hoy = new Date();
+  for (let i = 0; i < 18; i++) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    const anio = d.getFullYear();
+    const mes = d.getMonth() + 1;
+    const opt = document.createElement('option');
+    opt.value = `${anio}-${mes}`;
+    opt.textContent = `${meses[d.getMonth()]} ${anio}`;
+    sel.appendChild(opt);
+  }
+}
+
+// Recarga las sedes del mes elegido en el selector.
+async function cargarSedesMes() {
+  const sel = document.getElementById('selMesSedes');
+  let qs = '';
+  if (sel && sel.value) {
+    const [anio, mes] = sel.value.split('-');
+    qs = `?anio=${anio}&mes=${mes}`;
+  }
+  try {
+    DATA.sedes = await api(`/admin/sedes${qs}`);
+    renderSedes();
+  } catch (_) {}
+}
+
 function renderSedes() {
+  poblarMesesSedes();
   const lista = DATA.sedes;
   document.getElementById('contSedes').textContent = `${lista.length} sedes`;
   const filas = lista.map(s => `
     <tr>
       <td>${s.nombre || '—'}</td>
-      <td>${s.direccion || '—'}</td>
-      <td>${s.telefono || '—'}</td>
       <td>${s.duenoNombre || '—'}<div class="text-xs text-gray-500">${s.duenoEmail || ''}</div></td>
+      <td class="text-center">${s.citasCompletadasMes ?? 0}</td>
+      <td class="text-center">${s.citasAgendadasMes ?? 0}</td>
+      <td class="text-center font-semibold">${s.citasHistorico ?? 0}</td>
       <td>${s.creadoEn ? new Date(s.creadoEn).toLocaleDateString('es-CO') : '—'}</td>
     </tr>`).join('');
   document.getElementById('tablaSedes').innerHTML = `
     <table>
-      <thead><tr><th>Nombre</th><th>Dirección</th><th>Teléfono</th><th>Dueño</th><th>Creada</th></tr></thead>
-      <tbody>${filas || '<tr><td colspan="5" class="text-center text-gray-500 py-6">Sin sedes</td></tr>'}</tbody>
+      <thead><tr><th>Nombre</th><th>Dueño</th><th>Completadas (mes)</th><th>Agendadas (mes)</th><th>Citas histórico</th><th>Creada</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="6" class="text-center text-gray-500 py-6">Sin sedes</td></tr>'}</tbody>
     </table>`;
 }
 
